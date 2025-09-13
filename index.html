@@ -294,15 +294,23 @@
                 card.classList.remove('selected');
                 selectedCard = null;
             } else if (selectedCard) {
-                // Second card selection
-                attempts++;
-                
                 const firstLang = selectedCard.card.dataset.language;
                 const secondLang = card.dataset.language;
                 const firstIndex = selectedCard.index;
                 const secondIndex = index;
 
-                if (firstLang !== secondLang && firstIndex === secondIndex) {
+                // If both cards are from the same language, just switch selection
+                if (firstLang === secondLang) {
+                    selectedCard.card.classList.remove('selected');
+                    card.classList.add('selected');
+                    selectedCard = { card, index };
+                    return;
+                }
+
+                // Second card selection - different languages
+                attempts++;
+                
+                if (firstIndex === secondIndex) {
                     // Correct match!
                     selectedCard.card.classList.remove('selected');
                     selectedCard.card.classList.add('matched');
