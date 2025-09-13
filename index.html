@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק התאמה עברית-ערבית</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .word-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .column-title {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 10px;
+        }
+
+        .word-card {
+            padding: 15px 20px;
+            background: #f8f9ff;
+            border: 3px solid #e0e6ff;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: 500;
+            user-select: none;
+        }
+
+        .word-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .word-card.selected {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-color: #4a5bb8;
+        }
+
+        .word-card.matched {
+            background: linear-gradient(45deg, #11998e, #38ef7d);
+            color: white;
+            border-color: #0d7377;
+            cursor: default;
+            opacity: 0.8;
+        }
+
+        .word-card.wrong {
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            color: white;
+            border-color: #d63031;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .score-panel {
+            display: flex;
+            justify-content: space-around;
+            background: linear-gradient(45deg, #ffecd2 0%, #fcb69f 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .score-item {
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .score-number {
+            font-size: 2em;
+            display: block;
+            color: #e17055;
+        }
+
+        .reset-btn {
+            display: block;
+            margin: 0 auto;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .success-message {
+            text-align: center;
+            font-size: 1.5em;
+            color: #00b894;
+            margin: 20px 0;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .success-message.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .game-board {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .word-card {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>משחק התאמה עברית-ערבית</h1>
+        
+        <div class="score-panel">
+            <div class="score-item">
+                <span class="score-number" id="matches">0</span>
+                <div>התאמות</div>
+            </div>
+            <div class="score-item">
+                <span class="score-number" id="attempts">0</span>
+                <div>ניסיונות</div>
+            </div>
+            <div class="score-item">
+                <span class="score-number" id="accuracy">100%</span>
+                <div>דיוק</div>
+            </div>
+        </div>
+
+        <div class="game-board">
+            <div class="word-column">
+                <div class="column-title">עברית</div>
+                <div id="hebrew-words"></div>
+            </div>
+            <div class="word-column">
+                <div class="column-title">ערבית באותיות עבריות</div>
+                <div id="arabic-words"></div>
+            </div>
+        </div>
+
+        <div class="success-message" id="success-message">
+            🎉 כל הכבוד! השלמת את כל ההתאמות! 🎉
+        </div>
+
+        <button class="reset-btn" onclick="resetGame()">משחק חדש</button>
+    </div>
+
+    <script>
+        const wordPairs = [
+            { hebrew: 'דמיין', arabic: 'תְּחַיל' },
+            { hebrew: 'שיר', arabic: 'עִנִיָה' },
+            { hebrew: 'מנגינה', arabic: 'לַחֵן' },
+            { hebrew: 'משוגע', arabic: 'מַגְנוּן' },
+            { hebrew: 'רגיש', arabic: 'אִחְסַאס' },
+            { hebrew: 'חמלה', arabic: 'חִנְיָיה' },
+            { hebrew: 'הרג', arabic: 'קַתִל' },
+            { hebrew: 'מוזיקה', arabic: 'מוסיקא' },
+            { hebrew: 'חיים', arabic: 'חַייַאה' },
+            { hebrew: 'מדינות', arabic: 'דֻּוַל' },
+            { hebrew: 'זהות', arabic: 'הַוִייה' },
+            { hebrew: 'קיים', arabic: 'מַוגֻוּד' },
+            { hebrew: 'מואר', arabic: 'מַצְּוִיהּ' },
+            { hebrew: 'אנשים', arabic: 'נַאס' },
+            { hebrew: 'שלום', arabic: 'סַלַאם' },
+            { hebrew: 'חלום', arabic: 'חִלֵם' },
+            { hebrew: 'כמוני', arabic: 'מִתְלִי' },
+            { hebrew: 'מאחל', arabic: 'בַּתְמַנַא' },
+            { hebrew: 'תיידד אותי', arabic: 'תְּרַאפִקְנִי' },
+            { hebrew: 'סובל', arabic: 'מַוְגוּעַ' },
+            { hebrew: 'אויב שלי', arabic: 'עַדֻוִי' },
+            { hebrew: 'עוולות', arabic: 'טֻלֻוּם' },
+            { hebrew: 'מאחד אותנו', arabic: 'בְּתגִמַעְנַא' },
+            { hebrew: 'רעב', arabic: 'גִוּעַ' },
+            { hebrew: 'גבולות', arabic: 'חֻדֻוּד' }
+        ];
+
+        let selectedCard = null;
+        let matches = 0;
+        let attempts = 0;
+        let matchedPairs = new Set();
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function createWordCard(word, language, index) {
+            const card = document.createElement('div');
+            card.className = 'word-card';
+            card.textContent = word;
+            card.dataset.language = language;
+            card.dataset.index = index;
+            card.addEventListener('click', () => selectCard(card, index));
+            return card;
+        }
+
+        function selectCard(card, index) {
+            if (card.classList.contains('matched') || card.classList.contains('wrong')) {
+                return;
+            }
+
+            // Remove previous wrong styling
+            document.querySelectorAll('.word-card').forEach(c => {
+                c.classList.remove('wrong');
+            });
+
+            if (selectedCard === null) {
+                // First card selection
+                document.querySelectorAll('.word-card').forEach(c => {
+                    c.classList.remove('selected');
+                });
+                card.classList.add('selected');
+                selectedCard = { card, index };
+            } else if (selectedCard && selectedCard.card === card) {
+                // Deselect the same card
+                card.classList.remove('selected');
+                selectedCard = null;
+            } else if (selectedCard) {
+                // Second card selection
+                attempts++;
+                
+                const firstLang = selectedCard.card.dataset.language;
+                const secondLang = card.dataset.language;
+                const firstIndex = selectedCard.index;
+                const secondIndex = index;
+
+                if (firstLang !== secondLang && firstIndex === secondIndex) {
+                    // Correct match!
+                    selectedCard.card.classList.remove('selected');
+                    selectedCard.card.classList.add('matched');
+                    card.classList.add('matched');
+                    matches++;
+                    matchedPairs.add(firstIndex);
+
+                    if (matches === wordPairs.length) {
+                        setTimeout(() => {
+                            document.getElementById('success-message').classList.add('show');
+                        }, 500);
+                    }
+                } else {
+                    // Wrong match
+                    selectedCard.card.classList.remove('selected');
+                    selectedCard.card.classList.add('wrong');
+                    card.classList.add('wrong');
+
+                    setTimeout(() => {
+                        if (selectedCard && selectedCard.card) {
+                            selectedCard.card.classList.remove('wrong');
+                        }
+                        card.classList.remove('wrong');
+                    }, 1000);
+                }
+
+                selectedCard = null;
+                updateScore();
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('matches').textContent = matches;
+            document.getElementById('attempts').textContent = attempts;
+            const accuracy = attempts > 0 ? Math.round((matches / attempts) * 100) : 100;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+        }
+
+        function resetGame() {
+            selectedCard = null;
+            matches = 0;
+            attempts = 0;
+            matchedPairs.clear();
+            document.getElementById('success-message').classList.remove('show');
+            initGame();
+            updateScore();
+        }
+
+        function initGame() {
+            const hebrewContainer = document.getElementById('hebrew-words');
+            const arabicContainer = document.getElementById('arabic-words');
+            
+            // Clear containers
+            hebrewContainer.innerHTML = '';
+            arabicContainer.innerHTML = '';
+
+            // Shuffle the words
+            const shuffledHebrew = shuffleArray(wordPairs.map((pair, index) => ({ word: pair.hebrew, index })));
+            const shuffledArabic = shuffleArray(wordPairs.map((pair, index) => ({ word: pair.arabic, index })));
+
+            // Create Hebrew cards
+            shuffledHebrew.forEach(({ word, index }) => {
+                const card = createWordCard(word, 'hebrew', index);
+                hebrewContainer.appendChild(card);
+            });
+
+            // Create Arabic cards (written in Hebrew letters)
+            shuffledArabic.forEach(({ word, index }) => {
+                const card = createWordCard(word, 'arabic', index);
+                arabicContainer.appendChild(card);
+            });
+        }
+
+        // Initialize the game
+        initGame();
+        updateScore();
+    </script>
+</body>
+</html>
